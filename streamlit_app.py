@@ -1,22 +1,20 @@
 import streamlit as st
 import re
-import requests
 
-st.set_page_config(page_title="Özgür Erişim Ultra", layout="wide")
+st.set_page_config(page_title="Özgür Erişim İndirici", layout="wide")
 
-st.title("🛡️ Filtre Delen Video Oynatıcı")
-st.caption("Bağlantı sıfırlama hatasını aşmak için video dosyası doğrudan sunucudan çekiliyor.")
+st.title("🛡️ Filtre Delen Video İndirici")
+st.markdown("Eğer video oynatılamıyorsa, bu yöntemle **dosya olarak indirip** izleyebilirsiniz.")
 
-# Farklı bölgelerden daha sağlam API sunucuları
+# En sağlam API tünelleri
 api_servers = [
     "https://invidious.asir.dev",
-    "https://inv.riverside.rocks",
+    "https://inv.tux.rs",
     "https://invidious.namazso.eu",
-    "https://iv.melmac.space",
-    "https://invidious.sethforprivacy.com"
+    "https://iv.melmac.space"
 ]
 
-url_input = st.text_input("YouTube Video Linkini Girin:")
+url_input = st.text_input("YouTube Linkini Buraya Yapıştırın:")
 
 def get_video_id(url):
     patterns = [r'(?:v=|\/)([0-9A-Za-z_-]{11}).*', r'shorts\/([0-9A-Za-z_-]{11})', r'youtu\.be\/([0-9A-Za-z_-]{11})']
@@ -28,30 +26,24 @@ def get_video_id(url):
 if url_input:
     vid_id = get_video_id(url_input)
     if vid_id:
-        st.write("🔄 Uygun tünel aranıyor, lütfen bekleyin...")
+        st.subheader("📥 İndirme Bağlantıları")
+        st.write("Aşağıdaki butonlara sağ tıklayıp 'Farklı Kaydet' diyebilir veya direkt tıklayarak indirmeyi başlatabilirsiniz.")
         
-        success = False
-        # Hem sunucuları hem de kalite ayarlarını (itag) deniyoruz
-        # itag 22 = 720p, itag 18 = 360p
+        # Her sunucu için bir indirme butonu oluştur
         for server in api_servers:
-            for quality in ["22", "18"]:
-                video_source = f"{server}/latest_version?id={vid_id}&itag={quality}"
-                try:
-                    # Sunucunun canlı olup olmadığını hızlıca kontrol et
-                    res = requests.head(video_source, timeout=3)
-                    if res.status_code < 400:
-                        st.video(video_source)
-                        st.success(f"Bağlantı kuruldu! Sunucu: {server} (Kalite: {quality})")
-                        success = True
-                        break
-                except:
-                    continue
-            if success: break
-        
-        if not success:
-            st.error("Şu an tüm tüneller yoğun veya ağınız tarafından engelleniyor.")
-            st.info("💡 İpucu: Sayfayı yenileyip 10-15 saniye sonra tekrar deneyin.")
+            # itag 22: 720p, itag 18: 360p
+            dl_url_720 = f"{server}/latest_version?id={vid_id}&itag=22"
+            dl_url_360 = f"{server}/latest_version?id={vid_id}&itag=18"
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown(f'<a href="{dl_url_720}" target="_blank" style="text-decoration:none;"><button style="width:100%; padding:10px; background-color:#ff4b4b; color:white; border:none; border-radius:5px;">Yüksek Kalite İndir (720p)</button></a>', unsafe_allow_html=True)
+            with col2:
+                st.markdown(f'<a href="{dl_url_360}" target="_blank" style="text-decoration:none;"><button style="width:100%; padding:10px; background-color:#4b4bff; color:white; border:none; border-radius:5px;">Düşük Kalite İndir (360p)</button></a>', unsafe_allow_html=True)
+            
+            st.caption(f"Sunucu Kaynağı: {server}")
+            st.divider()
     else:
-        st.error("Geçerli bir link bulunamadı.")
+        st.error("Geçerli bir YouTube linki bulunamadı.")
 
-st.sidebar.warning("Eğer video hala açılmıyorsa, ağınız video veri akışını (stream) tespit edip kesiyor olabilir.")
+st.sidebar.info("💡 **Nasıl Kullanılır?**\n\nButona bastığınızda indirme başlamazsa, butona sağ tıklayıp 'Bağlantıyı farklı kaydet' seçeneğini deneyin.")
