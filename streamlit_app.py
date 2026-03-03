@@ -1,38 +1,47 @@
 import streamlit as st
 import re
 
-st.set_page_config(page_title="Özgür Erişim Max", layout="wide")
+st.set_page_config(page_title="Özgür Erişim Ultra", layout="wide")
 
-st.title("🛡️ Engel Tanımayan Video Erişimi")
-st.warning("Eğer ekran boş kalırsa, sayfayı yenileyip farklı bir 'Proxy Kanalı' seçin.")
+st.title("🛡️ Filtre Delen Video Oynatıcı")
+st.markdown("Bağlantı sıfırlama hatalarını aşmak için **Video Dosyası** moduna geçildi.")
 
-# Bu servisler dünya genelinde milyonlarca kişi tarafından kullanıldığı için engellenmesi zordur
-proxy_services = {
-    "Kanal 1 (Croxy)": "https://www.croxyproxy.com/_tr/proxy?url=",
-    "Kanal 2 (BlockAway)": "https://www.blockaway.net/_tr/proxy?url=",
-    "Kanal 3 (WebProxy)": "https://www.webproxy.net/view?url="
-}
+# Daha az bilinen ve engellenmesi imkansıza yakın Invidious API sunucuları
+api_servers = [
+    "https://invidious.asir.dev",
+    "https://inv.riverside.rocks",
+    "https://invidious.namazso.eu",
+    "https://iv.melmac.space"
+]
 
-with st.sidebar:
-    st.header("Bağlantı Tüneli")
-    selected_proxy = st.selectbox("Proxy Kanalı Seçin:", list(proxy_services.keys()))
-    proxy_url = proxy_services[selected_proxy]
+url_input = st.text_input("YouTube Video Linkini Girin:")
 
-url_input = st.text_input("YouTube Video Linki:")
+def get_video_id(url):
+    patterns = [r'(?:v=|\/)([0-9A-Za-z_-]{11}).*', r'shorts\/([0-9A-Za-z_-]{11})', r'youtu\.be\/([0-9A-Za-z_-]{11})']
+    for p in patterns:
+        match = re.search(p, url)
+        if match: return match.group(1)
+    return None
 
 if url_input:
-    # URL'yi proxy formatına uygun hale getirelim
-    encoded_url = url_input.replace(":", "%3A").replace("/", "%2F").replace("?", "%3F").replace("=", "%3D")
-    final_url = f"{proxy_url}{encoded_url}"
-    
-    st.info(f"Bağlantı kuruluyor: {selected_proxy}")
-    
-    # Iframe içine proxy sitesini gömüyoruz
-    st.components.v1.iframe(final_url, height=800, scrolling=True)
-else:
-    st.write("Lütfen bir link girerek tüneli başlatın.")
+    vid_id = get_video_id(url_input)
+    if vid_id:
+        # Sunucuları sırayla dene
+        success = False
+        for server in api_servers:
+            try:
+                # Video dosyasını doğrudan çeken oynatıcı
+                video_source = f"{server}/latest_version?id={vid_id}&itag=22"
+                st.video(video_source)
+                st.success(f"Bağlantı Başarılı! Sunucu: {server}")
+                success = True
+                break
+            except:
+                continue
+        
+        if not success:
+            st.error("Tüm tüneller kapalı görünüyor. Lütfen farklı bir video deneyin.")
+    else:
+        st.error("Geçerli bir link bulunamadı.")
 
-with st.sidebar:
-    st.divider()
-    st.write("💡 **Neden Bu Çalışır?**")
-    st.write("Ağınız YouTube'u engeller ama bu büyük proxy servislerini 'iş amaçlı' veya 'genel amaçlı' gördüğü için açık bırakabilir.")
+st.sidebar.info("Bu yöntem, videoyu YouTube arayüzü olmadan doğrudan dosya olarak çeker. Firewall paketleri 'YouTube' olarak tanımlayamaz.")
