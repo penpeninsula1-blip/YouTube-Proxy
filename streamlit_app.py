@@ -1,60 +1,42 @@
 import streamlit as st
 import re
 
-# Sayfa Ayarları
-st.set_page_config(page_title="Özgür Erişim PRO", layout="wide", page_icon="🚀")
+st.set_page_config(page_title="Özgür Erişim Ultra", layout="wide")
 
-st.title("🚀 Kesintisiz Video Erişimi (V4)")
-st.markdown("---")
+st.title("🚀 Kesintisiz Video Erişimi (Final)")
+st.info("Eğer bir sunucu çalışmazsa, listeden diğerini deneyin. Bu uygulama trafiği bulut üzerinden tüneller.")
 
-# Sunucu Listesi (Biri çalışmazsa diğerini seçebilmeniz için)
+# Daha geniş ve güncel bir sunucu havuzu
 servers = {
-    "Invidious (Lüksemburg)": "https://invidious.flokinet.to",
-    "Invidious (Sırbistan)": "https://inv.tux.rs",
-    "Invidious (Almanya)": "https://invidious.projectsegfau.lt",
-    "Yewtu (Genel)": "https://yewtu.be",
-    "Piped (Alternatif Altyapı)": "https://piped.video"
+    "Sırbistan (Hızlı)": "https://inv.tux.rs",
+    "Fransa (Kararlı)": "https://invidious.no-logs.com",
+    "ABD (Alternatif)": "https://inv.tux.rs", 
+    "Almanya (Güvenli)": "https://invidious.projectsegfau.lt",
+    "Genel (Yewtu)": "https://yewtu.be"
 }
 
 with st.sidebar:
-    st.header("⚙️ Bağlantı Ayarları")
-    selected_server_name = st.selectbox("Çalışmayan bir sunucu olursa değiştirin:", list(servers.keys()))
-    selected_server = servers[selected_server_name]
-    st.divider()
-    st.info("💡 **İpucu:** Eğer video karesi boş kalırsa, listeden farklı bir sunucu seçip tekrar deneyin.")
+    selected_server = st.selectbox("Çalışmayan sunucuyu değiştirin:", list(servers.keys()))
+    server_url = servers[selected_server]
 
-url_input = st.text_input("YouTube Linkini Buraya Yapıştırın:", placeholder="https://www.youtube.com/watch?v=...")
+url_input = st.text_input("YouTube Linkini Yapıştırın:")
 
 def get_video_id(url):
-    """Tüm YouTube formatlarından Video ID'sini çeker."""
-    patterns = [
-        r'(?:v=|\/)([0-9A-Za-z_-]{11}).*', # Standart ve Mobil
-        r'shorts\/([0-9A-Za-z_-]{11})',     # Shorts
-        r'live\/([0-9A-Za-z_-]{11})',       # Canlı yayın
-        r'youtu\.be\/([0-9A-Za-z_-]{11})'    # Kısa link
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, url)
-        if match:
-            return match.group(1)
+    patterns = [r'(?:v=|\/)([0-9A-Za-z_-]{11}).*', r'shorts\/([0-9A-Za-z_-]{11})', r'youtu\.be\/([0-9A-Za-z_-]{11})']
+    for p in patterns:
+        match = re.search(p, url)
+        if match: return match.group(1)
     return None
 
 if url_input:
     vid_id = get_video_id(url_input)
-    
     if vid_id:
-        st.success(f"Video Algılandı! Sunucu: {selected_server_name}")
+        # Seçilen sunucu üzerinden iframe oluştur
+        embed_link = f"{server_url}/embed/{vid_id}"
         
-        # Piped sunucusu için farklı URL yapısı kullanılır
-        if "piped" in selected_server:
-            embed_url = f"{selected_server}/embed/{vid_id}"
-        else:
-            embed_url = f"{selected_server}/embed/{vid_id}"
-            
-        # Videoyu ekrana bas
-        st.components.v1.iframe(embed_url, height=650, scrolling=False)
+        # HTML kodunu doğrudan enjekte ederek firewall filtrelerini şaşırtalım
+        st.markdown(f'<iframe width="100%" height="600" src="{embed_link}" frameborder="0" allowfullscreen></iframe>', unsafe_allow_html=True)
+        
+        st.success(f"Bağlantı deneniyor: {selected_server}")
     else:
-        st.error("Lütfen geçerli bir YouTube linki (URL) girin.")
-
-st.markdown("---")
-st.caption("Bu uygulama, trafiği farklı sunucular üzerinden tünellediği için yerel engelleri aşar.")
+        st.error("Geçerli bir link bulunamadı.")
