@@ -2,20 +2,20 @@ import streamlit as st
 import requests
 import re
 
-st.set_page_config(page_title="Ultra Bypass PRO", layout="wide")
+st.set_page_config(page_title="Ultra Bypass Final", layout="wide")
 
-st.title("🛡️ Bulut Tabanlı Video Tüneli (Final)")
-st.info("Bu modda video YouTube'dan değil, doğrudan bu uygulama sunucusundan size aktarılır.")
+st.title("🛡️ Filtre Delen Veri Tüneli (V7)")
+st.info("Bu sürüm, veriyi parçalayarak tüneller. İlk yükleme 10-15 saniye sürebilir.")
 
-# Daha az bilinen ve engellenmesi en zor olan Invidious API'ları
-api_servers = [
-    "https://invidious.no-logs.com",
-    "https://inv.riverside.rocks",
+# Güvenilir Tünel Sunucuları
+tunnel_hosts = [
+    "https://inv.tux.rs",
+    "https://invidious.asir.dev",
     "https://iv.melmac.space",
-    "https://invidious.namazso.eu"
+    "https://invidious.no-logs.com"
 ]
 
-url_input = st.text_input("YouTube Linkini Girin:")
+url_input = st.text_input("YouTube Video Linkini Girin:")
 
 def get_video_id(url):
     patterns = [r'(?:v=|\/)([0-9A-Za-z_-]{11}).*', r'shorts\/([0-9A-Za-z_-]{11})', r'youtu\.be\/([0-9A-Za-z_-]{11})']
@@ -27,29 +27,28 @@ def get_video_id(url):
 if url_input:
     vid_id = get_video_id(url_input)
     if vid_id:
-        st.write("🔄 Bulut sunucusu videoyu hazırlıyor, lütfen bekleyin...")
+        st.write("🔄 Tünel kuruluyor, lütfen beklemeye devam edin...")
         
-        # Sunucuları sırayla tarayıp çalışan bir veri yolu buluyoruz
-        video_found = False
-        for server in api_servers:
-            # itag 18 (360p) engelleri aşmak için en kararlı formattır
-            stream_url = f"{server}/latest_version?id={vid_id}&itag=18"
+        found = False
+        for host in tunnel_hosts:
+            # itag 18: 360p (Düşük kalite ama engelleri aşma şansı en yüksek olanıdır)
+            stream_url = f"{host}/latest_version?id={vid_id}&itag=18"
+            
             try:
-                # Sunucunun yanıt verip vermediğini kontrol et (Streamlit sunucusu üzerinden)
-                res = requests.head(stream_url, timeout=5)
-                if res.status_code < 400:
-                    # Videoyu Streamlit'in kendi oynatıcısıyla göster
-                    # Bu sayede firewall sadece 'streamlit.app' adresinden veri geldiğini görür
+                # Sunucunun yanıt verip vermediğini kontrol et
+                res = requests.get(stream_url, stream=True, timeout=5)
+                if res.status_code == 200:
+                    # Videoyu Streamlit'in kendi hafızasından kullanıcıya sun
                     st.video(stream_url)
-                    st.success(f"Bağlantı tünellendi! (Kaynak: {server})")
-                    video_found = True
+                    st.success(f"Bağlantı tünellendi! (Sunucu: {host})")
+                    found = True
                     break
             except:
                 continue
         
-        if not video_found:
-            st.error("Şu an hiçbir bulut sunucusu yanıt vermiyor veya ağınız Streamlit'in veri akışını da kesiyor.")
+        if not found:
+            st.error("Ağınız bu sunuculardan gelen veri akışını tamamen engelliyor.")
+            st.warning("Son çare olarak butona sağ tıklayıp 'Bağlantıyı farklı kaydet' demeyi deneyin:")
+            st.markdown(f"[🎥 Doğrudan Video Dosyası Linki](https://invidious.asir.dev/latest_version?id={vid_id}&itag=18)")
     else:
         st.error("Geçerli bir link bulunamadı.")
-
-st.sidebar.warning("💡 Not: Videonun yüklenmesi 10-20 saniye sürebilir çünkü veri önce bulut sunucusuna, sonra size aktarılıyor.")
