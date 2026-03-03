@@ -1,42 +1,38 @@
 import streamlit as st
 import re
 
-st.set_page_config(page_title="Özgür Erişim Ultra", layout="wide")
+st.set_page_config(page_title="Özgür Erişim Max", layout="wide")
 
-st.title("🚀 Kesintisiz Video Erişimi (Final)")
-st.info("Eğer bir sunucu çalışmazsa, listeden diğerini deneyin. Bu uygulama trafiği bulut üzerinden tüneller.")
+st.title("🛡️ Engel Tanımayan Video Erişimi")
+st.warning("Eğer ekran boş kalırsa, sayfayı yenileyip farklı bir 'Proxy Kanalı' seçin.")
 
-# Daha geniş ve güncel bir sunucu havuzu
-servers = {
-    "Sırbistan (Hızlı)": "https://inv.tux.rs",
-    "Fransa (Kararlı)": "https://invidious.no-logs.com",
-    "ABD (Alternatif)": "https://inv.tux.rs", 
-    "Almanya (Güvenli)": "https://invidious.projectsegfau.lt",
-    "Genel (Yewtu)": "https://yewtu.be"
+# Bu servisler dünya genelinde milyonlarca kişi tarafından kullanıldığı için engellenmesi zordur
+proxy_services = {
+    "Kanal 1 (Croxy)": "https://www.croxyproxy.com/_tr/proxy?url=",
+    "Kanal 2 (BlockAway)": "https://www.blockaway.net/_tr/proxy?url=",
+    "Kanal 3 (WebProxy)": "https://www.webproxy.net/view?url="
 }
 
 with st.sidebar:
-    selected_server = st.selectbox("Çalışmayan sunucuyu değiştirin:", list(servers.keys()))
-    server_url = servers[selected_server]
+    st.header("Bağlantı Tüneli")
+    selected_proxy = st.selectbox("Proxy Kanalı Seçin:", list(proxy_services.keys()))
+    proxy_url = proxy_services[selected_proxy]
 
-url_input = st.text_input("YouTube Linkini Yapıştırın:")
-
-def get_video_id(url):
-    patterns = [r'(?:v=|\/)([0-9A-Za-z_-]{11}).*', r'shorts\/([0-9A-Za-z_-]{11})', r'youtu\.be\/([0-9A-Za-z_-]{11})']
-    for p in patterns:
-        match = re.search(p, url)
-        if match: return match.group(1)
-    return None
+url_input = st.text_input("YouTube Video Linki:")
 
 if url_input:
-    vid_id = get_video_id(url_input)
-    if vid_id:
-        # Seçilen sunucu üzerinden iframe oluştur
-        embed_link = f"{server_url}/embed/{vid_id}"
-        
-        # HTML kodunu doğrudan enjekte ederek firewall filtrelerini şaşırtalım
-        st.markdown(f'<iframe width="100%" height="600" src="{embed_link}" frameborder="0" allowfullscreen></iframe>', unsafe_allow_html=True)
-        
-        st.success(f"Bağlantı deneniyor: {selected_server}")
-    else:
-        st.error("Geçerli bir link bulunamadı.")
+    # URL'yi proxy formatına uygun hale getirelim
+    encoded_url = url_input.replace(":", "%3A").replace("/", "%2F").replace("?", "%3F").replace("=", "%3D")
+    final_url = f"{proxy_url}{encoded_url}"
+    
+    st.info(f"Bağlantı kuruluyor: {selected_proxy}")
+    
+    # Iframe içine proxy sitesini gömüyoruz
+    st.components.v1.iframe(final_url, height=800, scrolling=True)
+else:
+    st.write("Lütfen bir link girerek tüneli başlatın.")
+
+with st.sidebar:
+    st.divider()
+    st.write("💡 **Neden Bu Çalışır?**")
+    st.write("Ağınız YouTube'u engeller ama bu büyük proxy servislerini 'iş amaçlı' veya 'genel amaçlı' gördüğü için açık bırakabilir.")
